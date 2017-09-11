@@ -1,0 +1,11 @@
+this is my title
+---
+To install the new rmarkdown, 
+install_github("rmarkdown", args="--no-multiarch")
+```{r}
+x
+```
+
+The value of pi is not `r pi + 0.01`.
+googbye
+

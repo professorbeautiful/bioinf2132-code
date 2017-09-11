@@ -1,0 +1,222 @@
+---
+title: "MCMC and HMC for Rao genetic data"
+author: "Roger Day"
+date: "November 4, 2015"
+output: html_document
+---
+
+Recall the set-up for Rao's genetics data:
+
+Animals that are crosses of AB/ab x  AB/ab are classified in 4 categories: 
+\[\begin{array}{*{20}{c}}
+  Y&{Genotype}&{\Pr (category|\theta )}&{\Pr (category|\pi )} \\ 
+  {125}&{AB}&{(3 - 2\theta  + {\theta ^2})/4}&{\frac{1}{2} + \frac{\pi }{4}} \\ 
+  {18}&{Ab}&{(2\theta  - {\theta ^2})/4}&{\frac{1}{4} - \frac{\pi }{4}} \\ 
+  {20}&{aB}&{(2\theta  - {\theta ^2})/4}&{\frac{1}{4} - \frac{\pi }{4}} \\ 
+  {34}&{ab}&{(1 - 2\theta  + {\theta ^2})/4}&{\frac{\pi }{4}} 
+\end{array}\]
+The data are:
+```{r }
+y <- y.rao <- c(125,18,20,34)  #Original data.
+
+```
+
+The likelihood function is:
+\[\begin{gathered}
+  ODL \propto [Y|\pi ] \propto {\left( {\frac{1}{2} + \frac{\pi }{4}} \right)^{{Y_1}}}{\left( {\frac{1}{4} - \frac{\pi }{4}} \right)^{{Y_2} + {Y_3}}}{\left( {\frac{\pi }{4}} \right)^{{Y_4}}}  \\
+  \quad \quad \quad \quad \quad \quad  \propto \sum\limits_{{X_1} = 0}^{{Y_1}} {\frac{{n!}}{{{X_1}!{X}!{Y_2}!{Y_3}!{Y_4}!}}{{\left( {\frac{1}{2}} \right)}^{{X_1}}}{{\left( {\frac{1}{4} - \frac{\pi }{4}} \right)}^{{Y_2} + {Y_3}}}{{\left( {\frac{\pi }{4}} \right)}^{{X} + {Y_4}}}}   \\
+  \quad \quad \quad \quad = \sum\limits_{{X_1} = 0}^{{Y_1}} {\frac{{n!}}{{{X_1}!{X}!{Y_2}!{Y_3}!{Y_4}!}}CDL(\pi ;{X_1},{X},{Y_2},{Y_3},{Y_4})}   \\ 
+\end{gathered} \]
+
+The code for the likelihood function and its log:
+```{r }
+odl <- odl.rao <- function(y,p)
+{
+  (1/2+p/4)^y[1] * ((1-p)/4)^(y[2]+y[3]) * (p/4)^y[4] 
+}
+
+log.odl <- function(y,p) {
+  log(odl(y,p))
+}
+
+log.cdl <- log.cdl.rao <- function(ExpX, y, p)
+{
+  if(length(p) > 1)
+    return(sapply(p, log.cdl, ExpX=ExpX, y=y))
+  log(dmultinom(
+    x=c(y[1]-ExpX, ExpX, y[2], y[3], y[4]), 
+    prob = c(1/2, p/4, (1-p)/4, (1-p)/4, p/4))
+  )
+}
+
+```
+Plots of the ODL and its log:
+```{r}
+p.delta <- 0.01
+p.range <- seq(.01,.99,by=p.delta)
+plot (p.range, odl(y,p.range), type="l",
+      main="likelihood function")
+plot (p.range, log.odl(y,p.range), type="l",
+      main="log(likelihood)")
+
+```
+
+
+## Gibbs sampling for this problem.
+
+```{r}
+gibbsIter = function(current) {
+  x2Star = current["x2"]
+  phiStar = current["phi"]
+  x2New = rbinom(n = 1, size = y.rao[1], prob = (phiStar/4) / (1/2+phiStar/4))
+  phiNew = rbeta(n = 1, shape1 = x2New + y.rao[4] + 1, shape2 = y.rao[2] + y.rao[3] + 1)
+  return( c(x2=x2New, phi=phiNew))
+}
+
+phiInit = runif(1)
+x2Init = sample(0:125, 1)    ###   round(runif(1, max = 125))
+
+# gibbsIter(c(x2=x2Init, phi=phiInit))
+
+chainLength = 100
+chainData = matrix(NA, nrow=chainLength, ncol=2, 
+                   dimnames = list(1:chainLength, c("x2", "phi")))
+chainData[1, ] = c(x2=x2Init, phi=phiInit)
+for( iter in 2:chainLength) {
+  chainData[iter, ] = gibbsIter(chainData[iter - 1, ])
+}
+
+par(mfrow=c(2,1))
+plot(1:chainLength, chainData[ , "x2"])
+plot(1:chainLength, chainData[ , "phi"])
+hist(chainData[ , "x2"])
+plot(density(chainData[ , "phi"]))
+```
+
+Using *rstan* to do MCMC on this problem is problematic, because STAN does not handle unknowns with discrete support. Therefore STAN cannot handle *x2* directly. Here is an attempt (among many), but it will not compile. However, see below for a solution.
+```{r}
+stanCodeForRaoExample = '
+data {
+  int<lower=0> J; // number of categories (4) 
+  real yRao[J]; // mouse counts
+  int X2;
+}
+parameters {
+  real<lower=0> phi;
+  real<lower=0> pVec[5];
+}
+transformed parameters {
+  //Jp1 <- J + 1;
+  X[1] <- yRao[1] - X2;
+  X[2] <- X2;
+  for (j in 3:(J+1))
+    X[j] <- yRao[j-1];
+}
+generated quantities {
+  int X[J+1];
+}
+model {
+  pVec[1] <- 1.0/2;
+  pVec[2] <- phi/4;
+  pVec[3] <- 1/4-phi/4;
+  pVec[4] <- 1/4-phi/4;
+  pVec[5] <- phi/4;
+  X ~ binomial(125, pVec);
+}
+'
+# fit.rao <- stan(model_code = stanCodeForRaoExample, 
+#                 iter = 10, chains = 1)
+
+```
+A similar problem arises with mixture models with a finite number of components. A solution for mixture models is given in stan-reference-2.5.0.pdf, Chapter 9. It works directly with the marginalized model, summing over the components. We could try that approach. It will be quite inefficient. So we implement the likelihood directly, and generate a sample of *X2* values separately.
+
+```{r cache=TRUE}
+yRao = y.rao #### stan cannot handle dots in names.
+K = 4
+library(rstan)
+stanModelMatrix = rstan::lookup("~")
+head(stanModelMatrix)
+stanModelMatrix[
+  stanModelMatrix$StanFunction=="binomial",] 
+lookup("rbinom")
+stanCodeForRaoExample = '
+data {
+  int<lower=1> K; // number of categories, 4
+  int yRao[K]; // observations
+}
+transformed data{
+  int N;  // total sample size;
+  N <- sum(yRao);
+}
+parameters {
+  real<lower=0, upper=1> phi; // 
+}
+transformed parameters {
+  simplex[K] theta; // 
+  theta[1] <- 1.0/2 + phi/4;
+  theta[2] <- 1.0/4 - phi/4;
+  theta[3] <- 1.0/4 - phi/4;
+  theta[4] <- phi/4;
+}
+model {
+  yRao ~ binomial(N, theta);
+}
+generated quantities {
+  int X2;
+  X2 <- binomial_rng(yRao[1], theta[1]);
+}
+'
+stan.fit.rao <- stan(
+  model_code=stanCodeForRaoExample,
+  iter=2000, chains=4, cores=2)
+print(stan.fit.rao)
+library(plyr)
+laply(stan.fit.rao@inits, '[', "phi")
+unlist(names(stan.fit.rao@sim$samples[[1]]))
+for(i in 1:4)
+ print(summary(stan.fit.rao@sim$samples[[i]]$phi))
+summary(chainData[ , "phi"])
+stan.fit.rao@sim$chains  ## 4
+dim(laply(stan.fit.rao@sim$samples, cbind))
+
+
+library(coda)
+coda::autocorr.plot(As.mcmc.list(stan.fit.rao))
+```
+We load ggmcmc. We don't want to see all the packages loaded in support, so we use the chunk option "message=FALSE".  ("results=hide" doesn't work.)
+```{r,  results='hide', message=FALSE}
+knitr::opts_chunk$set(results="hide", message=FALSE)
+library(ggmcmc)
+```
+```{r}
+knitr::opts_chunk$set(results="markup")
+ggsObj = ggs(stan.fit.rao, stan_include_auxiliar=TRUE)
+ggs_Rhat(ggsObj)
+ggs_traceplot(ggsObj)
+ggs_density(ggsObj, family="phi")
+ggs_density(ggsObj, family="X2")
+```
+Looks good.
+
+We would like to overlay with the previous MCMC density. Adding stuff to a ggplot2 graph using ordinary graphics seems impossible.  Using grid commangs might be possible, but for now we give up.
+```{r}
+# require(gridGraphics)
+# grid.ls()  ### grobs only
+# grid.ls(grobs=F, viewports=T)
+# grid.ls(grobs=F, viewports=T, fullNames=T)
+# nestedListing(current.viewport())
+# pathListing("ROOT")
+# grobPathListing(current.viewport())
+# phiDensity = density(chainData[ , "phi"])
+# #plot(phiDensity)
+# grid.lines(phiDensity$x, phiDensity$y, 
+#            default.units = "native")
+# ggs_density(ggsObj, family="phi") +
+#   geom_line(data = as.data.frame(
+#     density(chainData[,"phi"])[1:2]),
+#     mapping = aes(x=x, y=y, colour="black",
+#                   fill=NA) )
+
+```
+
+

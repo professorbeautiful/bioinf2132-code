@@ -1,0 +1,25 @@
+###  Fitting a negative binomial-- extra stuff.
+
+Let's study the behavior of the log likelihood function.
+```{r eval=F}
+loglikFun = function(a, b) {
+colSums(apply(expand.grid(a, 1/b), 1, dgamma,
+x=theGammas, log=TRUE))
+}
+plot(aVec<-seq(10,50,length=100), loglikFun(aVec, 1/trueP - 1))
+plot(bVec<-seq(1, 2, length=100), loglikFun(trueR, bVec))
+optimize(f=loglikFun, a=trueR, interval=c(0.01, 0.4), 
+maximum=TRUE)   ### 0.034 But the true beta is 1.5
+### But this is the smooshed data.
+```
+```{r eval=F}
+### Now try a dnbinom fit:
+loglikFun = function(a, p) {
+colSums(apply(expand.grid(p, a), 1, dnbinom, 
+size=N, x=data, log=TRUE))
+}
+plot(aVec<-seq(10,50,length=100), loglikFun(aVec, trueP))
+plot(bVec<-seq(0.01, .2, length=100), loglikFun(trueR, bVec))
+optimize(f=loglikFun, a=trueR, interval=c(0.01, 0.4), maximum=TRUE)   ### 0.034 
+```
+

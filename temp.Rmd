@@ -1,0 +1,1 @@
+\[ODL(\phi ;Y) = \int\limits_\user1{X} {I\{ Y = g(X)\} [X|\phi ]}  = \int\limits_{{g^{ - 1}}(Y)} {[X|\phi ]} \]

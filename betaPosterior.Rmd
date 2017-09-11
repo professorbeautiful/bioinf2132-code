@@ -1,0 +1,29 @@
+---
+title: "Beta distributions"
+author: "Roger Day"
+date: "September 15, 2015"
+output: html_document
+runtime: shiny
+---
+
+
+```{r, echo=FALSE}
+inputPanel(
+  numericInput(inputId = "sampleSize", label = "sampleSize", value = 12, min = 1, max=20, step = 1),
+  numericInput(inputId = "heads", label = "heads", value = 9, min = 0, max=20, step = 1),
+  numericInput(inputId = "a", label = "aPrior", value = 1, min = 0, max=25, step = 1),
+  numericInput(inputId = "b", label = "bPrior", value = 1, min = 0, max=25, step = 1),
+  br(),
+  plotOutput("posteriorPlot")
+)
+
+output$posteriorPlot = renderPlot({
+  xvec = seq(0,1,0.01)
+  posterior = dbeta (x = xvec, shape1 = input$a + input$heads,
+                     shape2 = input$b + input$sampleSize - input$heads)
+  plot(x=xvec, y=posterior)
+})
+
+```
+
+

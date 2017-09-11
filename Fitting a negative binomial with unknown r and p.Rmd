@@ -1,0 +1,151 @@
+---
+title: "Untitled"
+author: "roger"
+date: "10/17/2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Fitting a negative binomial with unknown $r$ and $p$.
+----
+
+```{r}
+alpha = trueR = 3; ## Try 3, 30 and 300.
+N = 1000
+mu = 30
+beta = mu/alpha
+trueP = 1/(beta+1)
+data1 = rnbinom(N, size=alpha, prob=trueP)
+```
+
+Alternatively, two stage sampling:
+```{r}
+theGammas = rgamma(N, shape=alpha, scale=1/trueP - 1)
+data = data2 = rpois(N, theGammas)
+qqplot(data1, data2)
+abline(a=0,b=1)
+```
+So we can see that the composition method gives the same distribution, negative binomial.
+
+### Empirical Bayes: "empirical step" using conditional maximization.
+
+We can get reasonable starting values by fitting the mean `r dataMean = mean(data)` and data variance `r dataVar = var(data)`.
+
+```{r}
+pHatStart = dataMean/dataVar
+rHatStart = dataMean*pHatStart/(1-pHatStart)
+pHatStart = pHatStart/10
+rHatStart = rHatStart * 10
+```
+Now let's iterate, starting with $pHat$ = `r round(pHatStart,2)` and $rHat$ = `r round(rHatStart,2)`. (Compare with the true values `r trueP` and `r trueR`.) We'll see if we can recover the parameters.
+```{r}
+nIters = 1000
+rHatVec = rep(NA, nIters)
+rHatVec[1] = rHatStart
+pHatVec = rep(NA, nIters)
+pHatVec[1] = pHatStart
+for(iter in 2:nIters) {
+  rHat = rHatVec[iter-1]
+  pHat = N*rHat/(N*rHat+sum(data))
+  ## Or, 1/(1+mean(data)/rHat)
+  searchInterval = rHat*c(1/10, 10)
+  rHat= uniroot(f=function(r) 
+        sum(digamma(data+r)) - N*digamma(r) + N * log(pHat),
+        interval=searchInterval)$root
+  pHatVec[iter] = pHat;  rHatVec[iter]=rHat
+}
+cat(trueP, " ", trueR, "\n")
+cat(pHatVec[nIters], " ", rHatVec[nIters], "\n")
+plot(rHatVec, pHatVec)
+pHat = pHatCM = pHatVec[nIters]
+rHat = rHatCM = rHatVec[nIters]
+
+```
+This is the "Empirical" step of Empirical Bayes.
+
+We can compare this maximum likelihood estimate to the Poisson fit, obtained by matching the mean $r*(1-p)/p$ = `r rHat*(1-pHat)/pHat`:
+```{r}
+plot(nSeq <- 0:100, dpois(nSeq, rHat*(1-pHat)/pHat), pch="P",
+col="green", type="b")
+points(nSeq, dnbinom(nSeq, size=rHat, prob=pHat), pch="N",
+  col="red", type="b")
+legend(x=50, y=0.06, box.col=NA,
+  legend=c("Poisson","Negative binomial"), 
+  pch=c("P","N"), text.col=c("green", "red"), 
+  lty=c(1,1), col=c("green", "red"))
+```
+
+
+### Empirical Bayes:  Bayes step
+The Bayes step consists of estimating poisson means for each observation:
+```{r}
+muHat = (data+rHat)*(1-pHat)
+plot(data, muHat, ylim=range(data), pch="H", font=3, col='green')
+abline(a=0,b=1)
+abline(h=rHat*(1-pHat)/pHat)  ## Marginal mean.
+points(data, theGammas, col='red', pch='T')
+points(data, muHat, pch="H", font=3, col='green')
+```
+
+We see the "shrinking" from the raw data estimate towards the grand mean, sacrificing unbiasedness for variance reduction. If $hat(r)$ is small, say 3, then the "prior" is very broad, and the information is primarily from the data. There is little shrinking. But if $hat(r)$ is big, like 30, the shrinking is fairly strong.
+
+How do the estimated gammas compare with the true gammas?
+```{r}
+qqplot(theGammas, muHat)
+abline(a=0,b=1)
+```
+This is a little tilted-- unknown whether due to the skewness of the Poisson or of the gamma, or just a bug.
+
+
+### EM algorithm approach 
+
+Now let's try it the EM way. The derivatives of $Q$ are:
+
+\[\begin{gathered}
+  0 = \frac{{\partial Q}}{{\partial \alpha }} =  - n\psi (\alpha ) - n\log \beta  + {T_1}^*  \\
+  0 = \frac{{\partial Q}}{{\partial \beta }} =  - n\alpha /\beta  - {T_2}^*/{\beta ^2}\quad   \\ 
+\end{gathered} \]
+
+and setting them equal to zero, we get the following loop:
+
+
+```{r eval=TRUE}
+nIters = 1000
+rHatVec = rep(NA, nIters)
+rHatVec[1] = rHatStart
+pHatVec = rep(NA, nIters)
+pHatVec[1] = pHatStart
+for(iter in 2:nIters) {
+  alphaStar = rHatVec[iter-1]
+  alpha_I_Star = data + alphaStar
+  betaStar = 1 - pHatVec[iter-1]
+  T1star = sum(digamma(alpha_I_Star) + 
+            log(betaStar) )
+  T2star = sum(data + alphaStar) * betaStar
+  searchFunction = function(betaTemp) {
+    alphaTemp = (T2star/betaTemp/N)
+    return(-N*digamma(alphaTemp)-N*log(betaTemp)+T1star)
+  }
+  searchInterval = betaStar*c(1/100, 100)
+  searchResult = uniroot(f=searchFunction,
+    interval=searchInterval)
+  betaHat = searchResult$root
+  alphaHat = T2star/betaHat/N
+
+  pHatVec[iter] = pHat;  rHatVec[iter] = alphaHat
+}
+pHatEM = pHatVec[iter]
+rHatEM = rHatVec[iter]
+plot(rHatVec, pHatVec)
+```
+Comparing the truth to the two final estimates after `r nIters` iterations:
+```{r}
+results = data.frame(truth=c(trueR, trueP), 
+                     CM=c(rHatCM, pHatCM),
+                EM=c(rHatEM, pHatEM) )
+dimnames(results)[[1]] = c("R", "P")
+results
+```

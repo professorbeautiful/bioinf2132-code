@@ -1,0 +1,55 @@
+## Adventures in Bayesian networks and classification trees.
+
+A key result in Bayesian networks is the scoring algorithm for a possible causal structure, a "directed acyclic graph" (DAG) $B_S$.
+
+First, we just double-check the result for the beta-binomial marginal distribution, with Beta(1,1) as the "prior" for the binomial probability:
+```{r}
+table(rbinom(1e5, 9, rbeta(1e5,1,1)))
+```
+We obtain a uniform on 0,...,9, as expected.
+
+```{r loadLibrary, results='hide', echo=FALSE}
+suppressMessages(
+  require("rBeta2009"))  ## Introduce rdirichlet.
+myRdir = function(r, shape){
+  if(length(shape)==2) 
+    return(c(p<-rbeta(r, shape[1], shape[2]), 1-p))
+  return(rdirichlet(r, shape))
+} # Necessary because of an annoyance in design of rdirichlet().
+```
+Now we'll try it marginalizing the multinomial over a uniform dirichlet.  (Not shown: modified code for rdirichlet(), from package rBeta2009. )
+```{r}
+K = 6  ## ri
+N = 7  ## Nij
+alphas = rep(1,K)
+D <- table(sapply(1:1e5, function(ignoreMe) 
+  paste(collapse=",", rmultinom(1, N, myRdir(1, alphas))
+)))
+D
+```
+So this looks uniform across the sample space of four-tuples adding to 5. To check, we normalize them and look at the probabilities of the nodes.
+```{r}
+normalize = function(V) V/sum(V)
+c(N=length(D), summary(as.vector(normalize(D))))
+```
+Yes indeed, uniform.
+
+## Relationship to impurity indices for CART
+
+### Inverse binomial coefficient versus gini index:
+```{r}
+library(plyr)
+outcomeArray=apply(FUN=as.numeric, MARGIN=1:2,
+                 ldply(strsplit(names(D), split=","))
+                 )
+impurity = data.frame(outcomes = names(D),
+           binom=factorial(N) / 
+             apply(outcomeArray, 1, 
+                   function(nn) prod(factorial(nn)) ), 
+     gini=apply(outcomeArray, 1, 
+           function(nn) sum(nn/sum(nn) * (1-nn/sum(nn)))))
+with(impurity, plot(binom, gini,
+     xlab="binomial coef",
+     ylab="gini index") )
+with(impurity, glm(gini ~ poly(binom) - 1))
+```

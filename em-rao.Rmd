@@ -1,0 +1,46 @@
+##################   em.rao.R  ##################
+
+```{r}
+odl <- function(y,p)
+{
+  (1/2+p/4)^y[1] * ((1-p)/4)^(y[2]+y[3]) * (p/4)^y[4] 
+}
+log.odl <- function(y,p) {
+  log(odl(y,p))
+}
+
+y <- c(125,18,20,34)  #Original data.
+#y <- c(12,2,2,3)  #Reduced data.
+p.delta <- 0.01
+p.range <- seq(.01,.99,by=p.delta)
+plot (p.range, odl(y,p.range), type="l")
+plot (p.range, log.odl(y,p.range), type="l")
+
+plot (p.range.narrow <- p.range*0.05 + 0.61, 
+      log.odl(y,p.range.narrow), type="l")
+em.rao <- function (start=0.99) {
+    p.list <- rep(NA,nsteps)
+    p.diff <- rep(NA,nsteps)
+    t.list <- rep(NA,nsteps)
+    logodl.list <- rep(NA,nsteps)
+    p.list[1] <- start
+    for (i in 1:nsteps) {
+      # e-step # E(X2) + X5)
+      t.list[i] <-  y[1]*p.list[i]/(2+p.list[i]) + y[4]  
+      if (i < nsteps)
+        p.list[i+1] <- t.list[i]/(t.list[i] + y[2]+y[3])
+      if (i > 1)
+        p.diff[i] <- p.list[i] - p.list[i-1]
+      logodl.list[i] <- log.odl(y,p.list[i])
+      points(p.list[i],log.odl(y,p.list[i]),
+             pch=as.character(i),
+             col=i,cex=3,
+             xpd=1)
+    }
+    data.frame(p.list,t.list,logodl.list)
+}
+
+nsteps <-20
+result <- em.rao()
+result
+```

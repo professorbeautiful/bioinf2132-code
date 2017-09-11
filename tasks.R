@@ -1,0 +1,2 @@
+
+tasks <-  c(raoData = "./raoData", logisticRegression = "./logisticRegression",      removeMe = "./removeMe", contamDiscrete = "./contamDiscrete",      metropolis = "./metropolis", multipleImputation = "./multipleImputation")

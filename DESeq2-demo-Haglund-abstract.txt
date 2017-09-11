@@ -1,0 +1,21 @@
+http://www.ncbi.nlm.nih.gov/pubmed/23024189
+
+J Clin Endocrinol Metab. 2012 Dec;97(12):4631-9. doi: 10.1210/jc.2012-2484. Epub 2012 Sep 28.
+Evidence of a functional estrogen receptor in parathyroid adenomas.
+Haglund F1, Ma R, Huss M, Sulaiman L, Lu M, Nilsson IL, Höög A, Juhlin CC, Hartman J, Larsson C.
+Author information
+Abstract
+CONTEXT:
+Primary hyperparathyroidism (PHPT) is most frequently present in postmenopausal women. Although the involvement of estrogen has been suggested, current literature indicates that parathyroid tumors are estrogen receptor (ER) α negative.
+
+OBJECTIVE:
+The aim of the study was to evaluate the expression of ERs and their putative function in parathyroid tumors.
+
+DESIGN:
+A panel of 37 parathyroid tumors was analyzed for expression and promoter methylation of the ESR1 and ESR2 genes as well as expression of the ERα and ERβ1/ERβ2 proteins. Transcriptome changes in primary cultures of parathyroid adenoma cells after treatment with the selective ERβ1 agonist diarylpropionitrile (DPN) and 4-hydroxytamoxifen were identified using next-generation RNA sequencing.
+
+RESULTS:
+Immunohistochemistry revealed very low expression of ERα, whereas all informative tumors expressed ERβ1 (n = 35) and ERβ2 (n = 34). Decreased nuclear staining intensity and mosaic pattern of positive and negative nuclei of ERβ1 were significantly associated with larger tumor size. Tumor ESR2 levels were significantly higher in female vs. male cases. In cultured cells, significantly increased numbers of genes with modified expression were detected after 48 h, compared to 24-h treatments with DPN or 4-hydroxytamoxifen, including the parathyroid-related genes CASR, VDR, JUN, CALR, and ORAI2. Bioinformatic analysis of transcriptome changes after DPN treatment revealed significant enrichment in gene sets coupled to ER activation, and a highly significant similarity to tumor cells undergoing apoptosis.
+
+CONCLUSIONS:
+Parathyroid tumors express ERβ1 and ERβ2. Transcriptional changes after ERβ1 activation and correlation to clinical features point to a role of estrogen signaling in parathyroid function and disease.

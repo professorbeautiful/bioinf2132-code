@@ -1,0 +1,44 @@
+---
+title: "search2132"
+author: "Roger Day"
+date: "September 2, 2015"
+output: html_document
+runtime: shiny
+---
+
+
+
+```{r, echo=FALSE}
+inputPanel(
+  textInput("searchPhrase", label = "search files", value = "plot"),
+  dataTableOutput("searchResults")
+)
+
+output$searchResults = DT::renderDataTable({
+  require(plyr)
+  require(dplyr)
+  require(DT)
+  if(!is.null(input$searchPhrase)) {
+    answer = system(intern = TRUE, ignore.stderr = TRUE,
+                    paste("grep -c ", input$searchPhrase, " *"))
+    print(head(answer))
+    answer = strsplit(answer, ":")
+    answer = plyr::ldply(.data=answer)  %>% 
+      plyr::rename(replace = c(V1="file", V2="count")) %>%
+       subset(count>0) #%>%
+      #mutate(file = HTML(paste0("<a href=", file, ">", file, "</a>")))
+    DT::datatable(answer)
+    # print(str(answer))
+#    print(rename(answer, replace=c(V1="file", V2="count")))
+  }
+  else NULL
+}
+# ,
+# callback = function(oTable) {
+#   
+# }
+)
+```
+
+
+

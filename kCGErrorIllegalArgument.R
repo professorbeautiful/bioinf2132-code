@@ -1,0 +1,2 @@
+Thu Oct 15 13:06:23 guest-wireless-pittnet-98-96.net.pitt.edu R[10864] <Error>: kCGErrorIllegalArgument: CGSShapeWindow
+Thu Oct 15 13:06:23 guest-wireless-pittnet-98-96.net.pitt.edu R[10864] <Error>: kCGErrorFailure: Set a breakpoint @ CGErrorBreakpoint() to catch errors as they are logged.

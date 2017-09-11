@@ -1,0 +1,19 @@
+\contentsline {section}{\numberline {1}Introduction}{3}{section.1}
+\contentsline {subsection}{\numberline {1.1}Prerequisites}{3}{subsection.1.1}
+\contentsline {subsection}{\numberline {1.2}Typical workflow of using RStan}{4}{subsection.1.2}
+\contentsline {section}{\numberline {2}An example of using rstan}{5}{section.2}
+\contentsline {subsection}{\numberline {2.1}Express the model in Stan}{6}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}User-defined Stan functions}{7}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}Preparing the data}{8}{subsection.2.3}
+\contentsline {subsection}{\numberline {2.4}Sample from the posterior distribution}{8}{subsection.2.4}
+\contentsline {section}{\numberline {3}Advanced features}{9}{section.3}
+\contentsline {subsection}{\numberline {3.1}Arguments to the {\tt stan} function}{9}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Data preprocessing and passing}{10}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Methods for the {\tt stanfit} class}{11}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}Sampling difficulties}{13}{subsection.3.4}
+\contentsline {subsection}{\numberline {3.5}The log posterior function and its gradient}{14}{subsection.3.5}
+\contentsline {subsection}{\numberline {3.6}Optimization in Stan}{14}{subsection.3.6}
+\contentsline {subsection}{\numberline {3.7}Model compiling in rstan}{16}{subsection.3.7}
+\contentsline {subsection}{\numberline {3.8}Run multiple chains in parallel}{17}{subsection.3.8}
+\contentsline {section}{\numberline {4}Working with CmdStan}{17}{section.4}
+\contentsline {section}{\numberline {5}Summary}{17}{section.5}

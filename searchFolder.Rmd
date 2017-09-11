@@ -1,0 +1,85 @@
+---
+title: "search2132"
+author: "Roger Day"
+date: "September 2, 2015"
+output: html_document
+runtime: shiny
+---
+
+This is a "shiny" app which searches the current folder using Unix "grep". The folder searched is _`r getwd()`_. 
+
+Items of interest:
+
+### Rmarkdown syntax.
+
+  + Use of the backquote to replace an R expression by R output.
+  
+  + Use of triple-backquotes to bracket a "chunk" of R code, to be replaced by the output. After the __```{r__  you can press TAB to get a list of chunk options.
+
+  + Stars and pluses to make a list.  (In a shiny Rmarkdown document, lists with indentations don't seem to work.)
+  
+  
+### Shiny
+  + Separation of the UI and the Server code.
+  + Input functions ("___Input()" place HTML into the UI, and make interactive values available.
+  + Output functions ("render___()") produce a reactive function 
+
+### plyr, dplyr  for data manipulation
+- plyr:  replaces the apply, sapply, lapply, mapply, tapply family.
+- Here we use plyr::ldply  and  plyr::rename
+- dplyr: new, much faster, works with remote databases etc. 
+
+### %>%
+- Originally in the package _magrittr_, but included in _dplyr_
+- Visually appealing representation of data pipelines
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Search app begins here
+
+```{r, echo=FALSE}
+fluidPage(
+  textInput("searchPhrase", label = "search files", value = "plot"),
+  fileInput("myFolder", "folder to search"),
+  dataTableOutput("searchResults")
+)
+
+output$searchResults = renderDataTable({
+  require(plyr)
+  require(dplyr)
+  if(!is.null(input$searchPhrase)) {
+    folderInfo = system(intern = TRUE, 
+                        print(paste("ls -ld ", input$myFolder)))
+    if(substr(folderInfo, 1, 1) == "d")
+      folder = input$myFolder
+    else
+      folder = "."
+    answer = system(intern = TRUE, ignore.stderr = TRUE,
+                    paste("grep -c ", input$searchPhrase,  
+                         folder, " *"))
+    answer = strsplit(answer, ":")
+    answer = plyr::ldply(.data=answer)  %>% 
+      plyr::rename(replace = c(V1="file", V2="count")) %>%
+      subset(count>0) 
+    return(answer)
+  }
+  else return(NULL)
+})
+```
+
+
+
