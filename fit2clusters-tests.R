@@ -1,39 +1,24 @@
-require(IdMappingAnalysis)
-args(fit2clusters)
-?fit2clusters
+#require(IdMappingAnalysis)
+#args(fit2clusters)
+# fit2clusters = IdMappingAnalysis::fit2clusters
+
 ### First, with essentially no measurement noise.
-fit = fit2clusters(testMe=TRUE, seed=NA,  
+fit = fit2clusters(testMe=TRUE,   
                    estimatesOnly=F,
-                   simAlpha=1e3, simBeta=1e10)
-showFit2 = function(fit) {
-  head(fit)
-  names(attributes(fit))
-  attr(fit, 'estimates')
-  plot(fit$Y, fit$posteriorOdds, 
-       log="y")
-  abline(h=c(1/100, 1, 100), col='red')
-  text(-0.5, 100, "odds=100/1", adj=c(0,0), col='red')
-  text(0.5, 1/100, "odds=1/100" , adj=c(0,1), col='red')
-  pi1 = attr(fit, "estimates")["estimated", "pi1"]
-  piVector = c(0, pi1)
-  posteriorMeans = rowSums(outer(fit$postProb, piVector ))
-  plot(fit$Y, posteriorMeans)
-}
+                   simAlpha=1e3, simMeanSD=1e-10)
+### Add measurement noise.
+fit = fit2clusters(testMe=TRUE, Ntest = 1000,
+                   simAlpha=5, simMeanSD=0.1, #simV=c(1,1), 
+                  estimatesOnly=F)
 showFit2(fit)
 
-###Now, add measurement noise.
-fit = fit2clusters(testMe=TRUE, seed=NA, simV=c(0.01,0.01), 
+#### Add constraint, when it is wrong
+fit = fit2clusters(testMe=TRUE,  simV=c(0.01,0.01), 
+                   psi0Constraint = 0, simPsi=c(-0.5, 0.5),
                    estimatesOnly=F)
 showFit2(fit)
 
-#### Add constraint
-fit = fit2clusters(testMe=TRUE, seed=NA, simV=c(0.01,0.01), psi0Constraint = 0,
-                   estimatesOnly=F)
-showFit2(fit)
-
-
-
-fit = fit2clusters(testMe=TRUE, seed=NA, simV=c(0.1,0.1), 
+fit = fit2clusters(testMe=TRUE,  simV=c(0.1,0.1), 
                    estimatesOnly=F)
 showFit2(fit)
 
