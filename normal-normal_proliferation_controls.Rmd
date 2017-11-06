@@ -1,0 +1,155 @@
+###      normal-normal proliferation controls example
+
+This Rmarkdown document presents some simulated proliferation data, and analyzes it using a normal-normal Bayesian approach.
+```{r echo=FALSE}
+nDays = 30
+nControls = 3
+controlMeans = 1:nControls ###############  alpha 
+dataVariance = 1 ############### tau
+priorMean = 0 ############### m
+priorVariance = 0.2	############ V
+```
+It's worth re-knitting this document with nDays = 30 and nDays=1000.
+`controlMeans` are the three `alpha` values in our model. Our three subjects have "true" means equal to 1, 2, and 3.
+
+Next we simulate data by adding systematic daily effects and pure unsystematic noise to true control means. `dataVariance` is `tau`.
+
+```{r echo=FALSE}
+trueDailyEffects = rnorm(nDays, priorMean, sqrt(priorVariance))
+controlData = expand.grid(control=1:nControls, day=1:nDays)
+controlData$trueDailyEffect = trueDailyEffects[controlData$day]
+controlData$sampleEffect = controlMeans[controlData$control]
+controlData$Y = controlMeans[controlData$control] + controlData$trueDailyEffect + rnorm(1:nrow(controlData), 0, sqrt(dataVariance))
+
+with(controlData,	plot(day, Y, pch=as.character(control)))
+for(control in 1:nControls) 
+  with(controlData[controlData$control == control, ], 
+       lines(day, Y, lty=2))
+aggregate(data=controlData, Y ~ control, FUN=mean)
+dailyMeans = aggregate(data=controlData, Y ~ day, FUN=mean)$Y
+lines(1:nDays, dailyMeans, lwd=2, col="red")
+title("Raw data (1, 2, 3) and raw daily means (red solid line)")
+```
+
+For now we suppose that we know controlMeans (1, 2, and 3), so we subtract them off to get raw ("R") daily effects. We compare them to the truth ("T"). 
+
+All of the prior means for dailyEffects equal zero (blue dotted line).
+Finally, we compute their Bayesian posterior means ("B"). We get them by multiplying the R values by the shrinker:
+```{r}
+shrinkerB = print(priorVariance/(priorVariance + dataVariance/nControls))
+```
+More often than not, `B` is closer to `T` than `R` is.
+
+```{r echo=FALSE}
+estimatedDailyEffects = dailyMeans - mean(controlMeans)
+plot(1:nDays, estimatedDailyEffects, lwd=1, ty="b", pch="R", col="red")
+points(1:nDays, trueDailyEffects, lwd=1, pch="T")
+
+lines(1:nDays, rep(priorMean,nDays), lwd=3, col="blue", lty=2)
+
+posteriorMeans = estimatedDailyEffects*shrinkerB + priorMean*(1-shrinkerB)
+points(1:nDays, posteriorMeans, pch="B", ty="b", col="blue")
+title("R=raw means\n T= true day effects\n B=Bayes estimates (dotted=prior)")
+```
+
+Here are the squared errors using the daily raw means (the red "R"s in the graph).
+```{r}
+summary((estimatedDailyEffects - trueDailyEffects)^2)
+```
+Here are the squared errors using the Bayes estimates.
+```{r}
+summary((posteriorMeans - trueDailyEffects)^2)
+```
+The true daily effects have population variance `priorVariance` and sample variance `r mean(trueDailyEffects^2)`.
+
+The posterior (conditional) variance of the estimates is 
+`r priorVariance*(1-shrinkerB)`. 
+
+We can compare the errors using the naive estimates and the shrunken estimates of the daily effects. Most points are below the diagonal; the shrunken are better.
+```{r echo=FALSE}
+plot(abs(estimatedDailyEffects - trueDailyEffects), 
+     abs(posteriorMeans - trueDailyEffects),
+     xlab="using raw estimates (R)",
+     ylab="using shrunken estimates (B)",
+     main="absolute errors")
+abline(a=0, b=1, lwd=3)
+```
+
+Here is an illustration of the general idea of optimizing a tuning parameter that picks the best trade-off between bias for variance.
+```{r echo=FALSE}
+shrinkerVector = seq(0, 1, 0.02)
+mseFunction = function(w) 
+  mean(
+    (estimatedDailyEffects*w + priorMean*(1-w) - trueDailyEffects)^2
+  ) 
+mseVector = sapply(shrinkerVector, mseFunction)
+
+plot(shrinkerVector, mseVector, type="l", xlab="shrinker", ylab="mean(squared error)", ylim=c(0, max(mseVector)*1.2), yaxs="i")
+
+points(x=0, y=mseVector[1], pch=".", cex=10)
+text(0, mseVector[1] + 0.03, expression(hat(beta) == zero), pos=4)
+text(0, mseVector[1] , "(prior)", pos=4)
+
+points(x=1, y=mseVector[length(mseVector)], pch=".", cex=10, col="red")
+text(1  - 0.15, y=mseVector[length(mseVector)], 
+     expression(hat(beta) == X), pos=1, col="red")
+text(1  - 0.15, y=mseVector[length(mseVector)] - 0.03, 
+     '(MLE)', pos=1, col="red")
+
+points(x=shrinkerB, y=mseFunction(shrinkerB), pch=".", cex=10,
+       col="blue")
+points(x=shrinkerB, y=mseFunction(shrinkerB),  cex=10,
+       col="blue",type="h")
+text(col="blue", adj=c(0,0),
+     shrinkerB+0.01, mseFunction(shrinkerB)-0.05, 
+     expression(hat(beta)== a[B](X)))
+text(col="blue", adj=c(0,0),
+     shrinkerB+0.01, mseFunction(shrinkerB)-0.08,  
+     "Bayes rule")
+
+
+whichAppearsBest = which(mseVector == min(mseVector))[1]
+points(x=shrinkerVector[whichAppearsBest], 
+       y=mseVector[whichAppearsBest], pch=".", cex=10,
+       col="darkgreen")
+text(col="darkgreen", 
+     shrinkerVector[whichAppearsBest],
+     mseVector[whichAppearsBest]+0.04,
+     "actual minimum")
+#### For the "plotmath" stuff to work, 3rd arg  has to be parsable as an R expression.
+title(paste0("mean over ",  nDays, " days"))
+
+```
+
+On the left side, we are "shrinking" (regressing) all the way to the prior mean.
+
+On the right side, no shrinking (`shrinker=1`).
+
+
+###  Using the R package "lme4"
+
+We treat the systematic daily effects as random effects.
+
+```{r}
+require(lme4)
+model1 = lmer(Y ~ factor(control) + day +  (1 | day), data=controlData)
+effects = ranef(model1)
+plot(effects$day$`(Intercept)`, posteriorMeans)
+abline(0,1)
+require(lattice)
+dotplot(effects)
+qqmath(model1)
+cat('The fixed control effects are estimated to be \n')
+summary(model1)$coefficients
+```
+
+Now let's go back to pretending we know the persons' true means.  We use an offset; for controls 1 to 3, the true means are 1 to 3 respectively: 
+```{r}
+model2 = lmer(Y ~ 0 + factor(control) + day +  (1 | day), data=controlData, offset = control)
+```
+
+## Session Information
+Good general practice is to include sessionInfo at the end of an Rmarkdown file.
+```{r}
+sessionInfo()
+```
