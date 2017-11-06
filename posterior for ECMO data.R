@@ -1,5 +1,5 @@
 ecmo2Data = matrix(c(9, 0, 6, 4), nrow=2)
-
+antilogit = function(z) exp(z)/(1+exp(z))
 lik2 = function(ab) {
   a = ab[1]; b = ab[2]
   p = antilogit(a + b*(1:0))
