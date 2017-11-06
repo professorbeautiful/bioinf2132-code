@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Fitting a negative binomial with unknown $r$ and $p$"
 author: "roger"
 date: "10/17/2016"
 output: html_document
@@ -25,6 +25,7 @@ Alternatively, two stage sampling:
 ```{r}
 theGammas = rgamma(N, shape=alpha, scale=1/trueP - 1)
 data = data2 = rpois(N, theGammas)
+
 qqplot(data1, data2)
 abline(a=0,b=1)
 ```
@@ -32,9 +33,11 @@ So we can see that the composition method gives the same distribution, negative 
 
 ### Empirical Bayes: "empirical step" using conditional maximization.
 
-We can get reasonable starting values by fitting the mean `r dataMean = mean(data)` and data variance `r dataVar = var(data)`.
+We can get reasonable starting values by fitting the mean `r mean(data)` and data variance `r var(data)`.
 
 ```{r}
+dataMean = mean(data)
+dataVar = var(data)
 pHatStart = dataMean/dataVar
 rHatStart = dataMean*pHatStart/(1-pHatStart)
 pHatStart = pHatStart/10
@@ -60,10 +63,15 @@ for(iter in 2:nIters) {
 cat(trueP, " ", trueR, "\n")
 cat(pHatVec[nIters], " ", rHatVec[nIters], "\n")
 plot(rHatVec, pHatVec)
+options(warn=-2)
+arrows(x0 = rHatVec[-nIters], y0 = pHatVec[-nIters],
+       x1 = rHatVec[-1], y1 = pHatVec[-1])
+options(warn=0)
 pHat = pHatCM = pHatVec[nIters]
 rHat = rHatCM = rHatVec[nIters]
 
 ```
+
 This is the "Empirical" step of Empirical Bayes.
 
 We can compare this maximum likelihood estimate to the Poisson fit, obtained by matching the mean $r*(1-p)/p$ = `r rHat*(1-pHat)/pHat`:
@@ -80,7 +88,8 @@ legend(x=50, y=0.06, box.col=NA,
 
 
 ### Empirical Bayes:  Bayes step
-The Bayes step consists of estimating poisson means for each observation:
+
+The Bayes step consists of estimating Poisson means for each observation:
 ```{r}
 muHat = (data+rHat)*(1-pHat)
 plot(data, muHat, ylim=range(data), pch="H", font=3, col='green')
@@ -97,7 +106,7 @@ How do the estimated gammas compare with the true gammas?
 qqplot(theGammas, muHat)
 abline(a=0,b=1)
 ```
-This is a little tilted-- unknown whether due to the skewness of the Poisson or of the gamma, or just a bug.
+
 
 
 ### EM algorithm approach 
@@ -140,8 +149,15 @@ for(iter in 2:nIters) {
 pHatEM = pHatVec[iter]
 rHatEM = rHatVec[iter]
 plot(rHatVec, pHatVec)
+options(warn=-2)
+arrows(x0 = rHatVec[-nIters], y0 = pHatVec[-nIters],
+       x1 = rHatVec[-1], y1 = pHatVec[-1])
+options(warn=0)
 ```
+
+
 Comparing the truth to the two final estimates after `r nIters` iterations:
+
 ```{r}
 results = data.frame(truth=c(trueR, trueP), 
                      CM=c(rHatCM, pHatCM),
