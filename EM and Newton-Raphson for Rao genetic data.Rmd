@@ -1,7 +1,6 @@
 ---
 title: "EM and Newton-Raphson for Rao genetic data"
 author: "Roger Day"
-date: "October 5, 2015"
 output: html_document
 ---
 
@@ -142,10 +141,12 @@ By reputation, Newton-Raphson converges quickly, and EM slowly.  Here, we see th
 ## The score (derivative of log likelihood) and the information matrix (-1 times 2nd derivative).
 If ExpX is missing, then we return the score for the log ODL; otherwise the score for the log CDL. Likewise for the information.
 
+
+ExpX is: `ExpX`
+
+###  Score function
+
 ```{r}
-
-
-#cat("ExpX is: ", ExpX, "\n")
 
 scorefun = function(ExpX, p0, delta = 1e-8, verbose=FALSE) {
   if(missing(ExpX)) {
@@ -160,9 +161,19 @@ scorefun = function(ExpX, p0, delta = 1e-8, verbose=FALSE) {
         - log.cdl(ExpX, y, p0-delta) ) / delta)
   return( - (y[2]+y[3])/(1-p0)  + (ExpX+y[4]) / p0 )
 }
+```
+The score (slope) of the observed data model is
+```{r}
 scorefun(p=p0)
+```
+The score (slope) of the observed data model is
+```{r}
 scorefun(ExpX=ExpX, p=p0)
+```
 
+### Information "matrices"  (one-dimensional)
+
+```{r}
 infofun = function(ExpX, p0) {
   if(missing(ExpX)) {
     return( (y[2]+y[3])/(1-p0)^2 + y[1] / (2+p0)^2 
@@ -183,6 +194,7 @@ cat("Expected complete information: ",
 Mslope <<- 1 - infofun(p=p0)/expectedCompleteInfo 
 cat("Slope should be exactly", Mslope, "\n")
 ```
+
 Finally, we plot the M function:
 ```{r}
 plot(0:1,0:1, pch="")
