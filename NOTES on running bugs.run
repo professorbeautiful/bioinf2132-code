@@ -1,0 +1,28 @@
+NOTES on running bugs.run
+
+WINESKIN
+Using OpenBUGS.pgm="/Users/Roger/Applications/Wineskin/OpenBUGS.app"
+
+error messages:
+
+Source:
+if ((.Platform$OS.type == "windows" || useWINE) && debug) {
+    temp <- system(bugsCall, invisible = FALSE)
+    ## arguments 'show.output.on.console', 'minimized' and 'invisible' are for Windows only
+    ## So this error is from system() arg "invisible"!
+  }
+  else temp <- system(bugsCall)
+  ## wine: cannot find L"Z:\\Users\\Roger\\Applications\\Wineskin\\OpenBUGS.app"
+      ## So this error is from wine itself!
+Does not run.
+
+=-=-=-=-=-=-=-=-
+
+Using OpenBUGS.pgm=paste0(OpenBUGS.dir, "/OpenBUGS.exe")
+The openbugs window appears. You have to close it by hand.
+But then, it worked.
+
+
+
+
+
