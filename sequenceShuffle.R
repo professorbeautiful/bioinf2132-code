@@ -1,4 +1,5 @@
 #### MCMC example
+###   like ClustalW, for aligning sequences
 
 seqData = lapply(6:13, function(L) 
 {
