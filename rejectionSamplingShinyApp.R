@@ -7,12 +7,13 @@ ui <- fluidPage(
   titlePanel("Adaptive Rejection Sampling"), 
   br(), 
   actionButton("next_point", label = "sample point(s)"),
-  numericInput("nPointsToAdd", "# Points to sample", 1),
+  numericInput(inputId = "nPointsToAdd", "# Points to sample", 1),
   fluidRow( column(width = 6,
       h2("g = p^(a-1) q^(b-1), proportional to the beta distribution"),
       plotOutput("samplingPlot")
     ),
     column(width = 6,
+           numericInput(inputId = "BWadjust", label = "bandwidth adjustment", value = 1, step=0.1),
            plotOutput("qqPlot")
     )
   )
@@ -77,7 +78,8 @@ server <- function(input, output) {
   output$qqPlot = renderPlot({
     if(length(rValues$proposalSet) > 0) {
       plot(col="blue", main="green=Truth, blue=sample smooth",
-           density(rValues$proposalSet[rValues$acceptance==TRUE]))
+           density(rValues$proposalSet[rValues$acceptance==TRUE],
+                   adjust=input$BWadjust))
       rug(rValues$proposalSet[rValues$acceptance==TRUE], col="blue")
       lines(p.seq, dbeta(p.seq, a, b), col="green")
     }
