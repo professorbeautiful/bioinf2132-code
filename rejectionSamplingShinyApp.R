@@ -9,13 +9,13 @@ ui <- fluidPage(
   actionButton("next_point", label = "sample point(s)"),
   numericInput(inputId = "nPointsToAdd", "# Points to sample", 1),
   fluidRow( column(width = 6,
-      h2("g = p^(a-1) q^(b-1), proportional to the beta distribution"),
-      plotOutput("samplingPlot")
-    ),
-    column(width = 6,
-           numericInput(inputId = "BWadjust", label = "bandwidth adjustment", value = 1, step=0.1),
-           plotOutput("qqPlot")
-    )
+                   h2("g = p^(a-1) q^(b-1), proportional to the beta distribution"),
+                   plotOutput("samplingPlot")
+  ),
+  column(width = 6,
+         numericInput(inputId = "BWadjust", label = "bandwidth adjustment", value = 1, step=0.1),
+         plotOutput("qqPlot")
+  )
   )
 )
 
@@ -49,15 +49,15 @@ server <- function(input, output) {
   observe({
     if(input$next_point > 0) isolate({  ## reaction
       for(i in 1:input$nPointsToAdd) {
-      proposal = rbeta(1,1,1)
-      rValues$proposalSet = c(rValues$proposalSet, proposal)
-      acceptProb = g(proposal)/h(proposal)/M
-      accept.u = runif(1)
-      h.u = h(proposal) * accept.u
-      accepted = (accept.u <= acceptProb)
-      rValues$h.u.Set = c(rValues$h.u.Set, h.u)
-      rValues$acceptance = c(rValues$acceptance, accepted)
-      #cat('proposal ', proposal, '\n')
+        proposal = rbeta(1,1,1)
+        rValues$proposalSet = c(rValues$proposalSet, proposal)
+        acceptProb = g(proposal)/h(proposal)/M
+        accept.u = runif(1)
+        h.u = h(proposal) * accept.u
+        accepted = (accept.u <= acceptProb)
+        rValues$h.u.Set = c(rValues$h.u.Set, h.u)
+        rValues$acceptance = c(rValues$acceptance, accepted)
+        #cat('proposal ', proposal, '\n')
       }
     })
   })
