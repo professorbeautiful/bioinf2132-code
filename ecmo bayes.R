@@ -1,10 +1,12 @@
 ecmo2Data = matrix(c(9, 0, 6, 4), nrow=2)
-ab = c(1,2)
+ecmoProportions = ecmo2Data[1, ]/colSums(ecmo2Data)
 
+ab = c(1,2)
+antilogit = function(Z) exp(Z)/(1+exp(Z))
 lik2 = function(ab) {
 	a = ab[1]
 	b = ab[2]
-	p = antilogit(a + b*(1:0))
+	p = antilogit(c(a + b, a))
 	prod(
 	  p^ecmo2Data[1,] * (1-p)^ecmo2Data[2,]
 	  )
@@ -16,26 +18,29 @@ fisher.test(ecmo2Data)
 
 require("mvtnorm")
 
-prior2 = function(ab, a0=0, b0=0, va=1, vab=0, vb=1)
+prior2 = function(ab, a0=0, b0=0, va=100, vab=0, vb=100)
 		dmvnorm(ab, c(a0, b0), 
 			matrix(c(va, vab, vab, vb), nrow=2))
 
-avec = seq(-1, 3, length.out=20)
-bvec = seq(-1, 10, length.out=20)
+avec = seq(-20, 20, length.out=100)
+bvec = seq(-20, 20, length.out=100)
 abgrid = expand.grid(avec, bvec)
-
+pEvec = antilogit(avec)
+pCvec = antilogit(bvec)
+jacobean = outer(pCvec*(1-pCvec) + pEvec*(1-pEvec), pCvec*(1-pCvec))
+  
 par(mfrow=c(1,2))
 
 prior2Matrix = matrix(prior2(abgrid), nrow=length(avec))
-contour(avec, bvec, prior2Matrix)
-
+contour(pEvec, pCvec, prior2Matrix * jacobean, col='lightgrey')
 lik2Matrix = matrix(apply(abgrid, 1, lik2), 
 	nrow=length(avec))
-contour(avec, bvec, lik2Matrix,
+contour(pEvec, pCvec, lik2Matrix * jacobean, col='green',
 	add=T)
-
+points(ecmoProportions[2], ecmoProportions[1], col='blue', pch='.', cex=10)
 posterior2Matrix = prior2Matrix * lik2Matrix
-contour(avec, bvec, posterior2Matrix)
+contour(avec, bvec, prior2Matrix)
+contour(avec, bvec, posterior2Matrix, add=T, col='red')
 
 #########   MCMC metropolis
 
@@ -76,14 +81,21 @@ pEvalues = metrop.out$values[ , 1] / (metrop.out$values[ , 1]+ metrop.out$values
 summary(pEvalues)
 pCvalues = metrop.out$values[ , 3] / (metrop.out$values[ , 3]+ metrop.out$values[ , 4])
 summary(pCvalues)
+
 ### Convert to a and b
 # Recall p = antilogit(a + b*(1:0))
 aValues = logit(pCvalues)
 bValues = logit(pEvalues) - aValues
 summary(aValues)
 summary(bValues)
-points()
+par(mfrow=c(1,1))
+contour(avec, bvec, posterior2Matrix, xlim=c(-2,4))
 
+points(aValues, bValues, col='red', pch='.')
+lines(aValues, bValues, col='red', pch='.')
+## Looks pretty sticky!
+
+#### the following doesn't show anything currently ####
 par(mfrow=c(2,2))
 for(whichdim in 1:4)
   plot.metrop.output.1(metrop.out, whichdim = whichdim, ylab='value')
