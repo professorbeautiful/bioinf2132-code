@@ -24,6 +24,7 @@ prior2 = function(ab, a0=0, b0=0, va=100, vab=0, vb=100)
 
 avec = seq(-20, 20, length.out=100)
 bvec = seq(-20, 20, length.out=100)
+
 abgrid = expand.grid(avec, bvec)
 pEvec = antilogit(avec)
 pCvec = antilogit(bvec)
@@ -32,12 +33,14 @@ jacobean = outer(pCvec*(1-pCvec) + pEvec*(1-pEvec), pCvec*(1-pCvec))
 par(mfrow=c(1,2))
 
 prior2Matrix = matrix(prior2(abgrid), nrow=length(avec))
+
 contour(pEvec, pCvec, prior2Matrix * jacobean, col='lightgrey')
 lik2Matrix = matrix(apply(abgrid, 1, lik2), 
 	nrow=length(avec))
 contour(pEvec, pCvec, lik2Matrix * jacobean, col='green',
 	add=T)
 points(ecmoProportions[2], ecmoProportions[1], col='blue', pch='.', cex=10)
+
 posterior2Matrix = prior2Matrix * lik2Matrix
 contour(avec, bvec, prior2Matrix)
 contour(avec, bvec, posterior2Matrix, add=T, col='red')
