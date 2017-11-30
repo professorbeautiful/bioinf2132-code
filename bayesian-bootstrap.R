@@ -1,5 +1,5 @@
 ## From http://sumsar.net/blog/2015/07/easy-bayesian-bootstrap-in-r/#the-bayesboot-function
-
+###  update:  now in a package:    install.packages("bayesboot")
 
 # Performs a Bayesian bootstrap and returns a sample of size n1 representing the
 # posterior distribution of the statistic. Returns a vector if the statistic is
