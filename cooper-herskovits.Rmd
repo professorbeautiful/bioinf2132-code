@@ -17,7 +17,7 @@ myRdir = function(r, shape){
   return(rdirichlet(r, shape))
 } # Necessary because of an annoyance in design of rdirichlet().
 ```
-Now we'll try it marginalizing the multinomial over a uniform dirichlet.  (Not shown: modified code for rdirichlet(), from package rBeta2009. )
+Now we'll try it marginalizing the multinomial over a uniform dirichlet.  (Not shown: modified code for rdirichlet(), from package rBeta2009. See source doc cooper-herskovits.Rmd)
 ```{r}
 K = 6  ## ri
 N = 7  ## Nij
@@ -25,7 +25,15 @@ alphas = rep(1,K)
 D <- table(sapply(1:1e5, function(ignoreMe) 
   paste(collapse=",", rmultinom(1, N, myRdir(1, alphas))
 )))
-D
+```
+
+We'll look at part of D:
+```{r echo=FALSE}
+print(D[1:6])
+cat ('...\n')
+print(D[nrow(D)/2 + 1:6])
+cat ('...\n')
+print(D[nrow(D) - 5:0])
 ```
 So this looks uniform across the sample space of four-tuples adding to 5. To check, we normalize them and look at the probabilities of the nodes.
 ```{r}
@@ -35,6 +43,11 @@ c(N=length(D), summary(as.vector(normalize(D))))
 Yes indeed, uniform.
 
 ## Relationship to impurity indices for CART
+
+"Classification and Regression Trees" (CART) have been popular in statistics for over 30 years. The choice whether to split a node on a variable in CART is analogous to adding an edge between the chosen splitting variable and the outcome variable in a Bayesian network. 
+
+CART often uses the "Gini index" to assess "impurity."
+
 
 ### Inverse binomial coefficient versus gini index:
 ```{r}
